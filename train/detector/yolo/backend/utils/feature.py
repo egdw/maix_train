@@ -265,7 +265,7 @@ class MobileNetFeature(BaseFeatureExtractor):
         weights = "/content/maix_train/train/detector/weights/mobilenet_7_5_224_tf_no_top.h5"
         
         input_image = Input(shape=(input_size[0], input_size[1], 3))
-        mobilenet = MobileNet(input_shape=(input_size[0], input_size[1],3),alpha = 0.75,depth_multiplier = 1, dropout = 0.001, 
+        mobilenet = MobileNet(input_shape=(input_size[0], input_size[1],3),alpha = alpha_change,depth_multiplier = 1, dropout = 0.001, 
                     weights = weights, include_top=False, 
                     total_strip_size=strip_size,
                     backend=tf.keras.backend, layers=tf.keras.layers, models=tf.keras.models, utils=tf.keras.utils)
