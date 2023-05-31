@@ -1,3 +1,7 @@
+# 相关代码请查看
+egdw/maix_train/train/detector/yolo/backend/utils/feature.py
+的259行
+
 train_scripts
 ===========
 
