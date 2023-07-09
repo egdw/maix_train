@@ -256,13 +256,13 @@ class MobileNetFeature(BaseFeatureExtractor):
             weights = "imagenet"
 
         # 修改这里的参数
-        alpha_change = 0.75
+        alpha_change = 0.5
         # 如果是0.25
         weights = "/content/maix_train/train/detector/weights/mobilenet_2_5_224_tf_no_top.h5"
         # 如果是0.5
         weights = "/content/maix_train/train/detector/weights/mobilenet_5_0_224_tf_no_top.h5"
         # 如果时0.75
-        weights = "/content/maix_train/train/detector/weights/mobilenet_7_5_224_tf_no_top.h5"
+        #weights = "/content/maix_train/train/detector/weights/mobilenet_7_5_224_tf_no_top.h5"
         
         input_image = Input(shape=(input_size[0], input_size[1], 3))
         mobilenet = MobileNet(input_shape=(input_size[0], input_size[1],3),alpha = alpha_change,depth_multiplier = 1, dropout = 0.001, 

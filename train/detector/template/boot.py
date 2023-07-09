@@ -67,10 +67,10 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=(224, 
 
 if __name__ == "__main__":
     try:
-        labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'mouse', 'microbit', 'ruler', 'cat', 'pear', 'ship', 'apple', 'car', 'pen', 'dog', 'umbrella', 'airplane', 'clock', 'grape', 'cup', 'left', 'right', 'front', 'stop']
+        labels = ['0', '1', '2', '3']
         anchors = [3.8125, 3.8125, 5.375, 5.375, 7.1875, 7.1875, 11.25, 11.3125, 9.125, 9.125]
-        main(anchors = anchors, labels=labels, model_addr=0x300000, lcd_rotation=2, sensor_window=(240, 240))
-        # main(anchors = anchors, labels=labels, model_addr="/sd/m.kmodel")
+        #main(anchors = anchors, labels=labels, model_addr=0x300000, lcd_rotation=2, sensor_window=(240, 240))
+        main(anchors = anchors, labels=labels, model_addr="/sd/m.kmodel", lcd_rotation=2, sensor_window=(240, 240))
     except Exception as e:
         sys.print_exception(e)
         lcd_show_except(e)
