@@ -2,6 +2,14 @@
 egdw/maix_train/train/detector/yolo/backend/utils/feature.py
 的259行
 
+# 分类相关代码查看
+egdw/maix_train/train/mobilenet_sipeed/mobilenet.py
+
+151行设置 0.5 0.75 0.25
+
+327行设置权重路径
+
+
 train_scripts
 ===========
 

@@ -147,6 +147,8 @@ def MobileNet(input_shape=None,
         RuntimeError: If attempting to run this model with a
             backend that does not support separable convolutions.
     """
+    # 修改这里,设置为0.75还是0.5
+    alpha = 0.75
     global backend, layers, models, keras_utils
     backend, layers, models, keras_utils = get_submodules_from_kwargs(kwargs)
 
@@ -322,6 +324,11 @@ def MobileNet(input_shape=None,
         model.load_weights('mobilenet_7_5_224_tf_no_top.h5')
         '''
     elif weights is not None:
+        # 默认为0.75
+        # 此处修改路径,比如0.5
+        # weights = "egdw/maix_train/train/classifier/weights/mobilenet_5_0_224_tf_no_top.h5"
+        # 0.25
+        # weights = "egdw/maix_train/train/classifier/weights/mobilenet_2_5_224_tf_no_top.h5"
         model.load_weights(weights)
 
     if old_data_format:
