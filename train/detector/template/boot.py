@@ -49,6 +49,8 @@ def main(anchors, labels = None, model_addr="/sd/m.kmodel", sensor_window=(224, 
     try:
         while 1:
             img = sensor.snapshot()
+            img = img.resize(224, 224)   # 使用图像处理函数处理原图像
+            img.pix_to_ai()              # 同步 `RGB888` 内存块
             t = time.ticks_ms()
             objects = kpu.run_yolo2(task, img)
             t = time.ticks_ms() - t
