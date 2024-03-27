@@ -352,7 +352,9 @@ class Classifier(Train_Base):
     def _get_labels(self, datasets_dir):
         labels = []
         for d in os.listdir(datasets_dir):
-            if d.startswith(".") or d == "__pycache__":
+            if d.startswith(".") or d == "__pycache__" or d == "__MACOSX":
+                if d == "__MACOSX":
+                    shutil.rmtree(datasets_dir+"/__MACOSX")
                 continue
             if os.path.isdir(os.path.join(datasets_dir, d)):
                 labels.append(d)
@@ -374,6 +376,9 @@ class Classifier(Train_Base):
         for label in labels:
             if not isascii(label):
                 return False, "class name(label) should not contain special letters"
+            # 排除 mac 自动生成的文件夹
+            if label == '__MACOSX':
+                continue
             # check image number
             files = os.listdir(os.path.join(self.datasets_dir, label))
             if len(files) < min_images_num:
@@ -393,7 +398,10 @@ class Classifier(Train_Base):
             images = random.sample(images, num)
             for image in images:
                 path = os.path.join(self.datasets_dir, label, image)
-                img = np.array(Image.open(path))
+                img = Image.open(path)
+                if img.size != (224, 244):
+                    img = img.resize((224, 224))
+                img = np.array(img)
                 if img.shape != shape:
                     msg += f"image {label}/{image} shape is {img.shape}, but require {shape}\n"
                     ok = False
