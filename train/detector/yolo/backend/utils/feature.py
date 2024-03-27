@@ -258,9 +258,9 @@ class MobileNetFeature(BaseFeatureExtractor):
         # 修改这里的参数
         alpha_change = 0.5
         # 如果是0.25
-        weights = "/content/maix_train/train/detector/weights/mobilenet_2_5_224_tf_no_top.h5"
+        weights = "train/detector/weights/mobilenet_2_5_224_tf_no_top.h5"
         # 如果是0.5
-        weights = "/content/maix_train/train/detector/weights/mobilenet_5_0_224_tf_no_top.h5"
+        weights = "train/detector/weights/mobilenet_5_0_224_tf_no_top.h5"
         # 如果时0.75
         #weights = "/content/maix_train/train/detector/weights/mobilenet_7_5_224_tf_no_top.h5"
         
