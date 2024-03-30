@@ -334,7 +334,7 @@ class Classifier(Train_Base):
         zip_file.close()
         dirs = []
         for d in os.listdir(datasets_dir):
-            if d.startswith(".") or not os.path.isdir(os.path.join(datasets_dir, d)) or d !="__MACOSX":
+            if d.startswith(".") or not os.path.isdir(os.path.join(datasets_dir, d)) or d =="__MACOSX":
                 continue
             dirs.append(d)
         if len(dirs) == 1: # sub dir
