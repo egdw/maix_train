@@ -74,7 +74,7 @@ class Detector(Train_Base):
             self.log.e("no datasets args")
             raise Exception("no datasets args")
         # parse datasets
-        ok, msg, self.labels, classes_data_counts, datasets_x, datasets_y = self._load_datasets(self.datasets_dir)
+        ok, msg, self.labels, classes_data_counts, datasets_x, datasets_y,xml_filenames = self._load_datasets(self.datasets_dir)
         if not ok:
             msg = f"datasets format error: {msg}"
             self.log.e(msg)
@@ -90,6 +90,7 @@ class Detector(Train_Base):
                                                                                              sum(classes_data_counts)))
         self.datasets_x = np.array(datasets_x, dtype='uint8')
         self.datasets_y = datasets_y
+        self.xml_filenames = xml_filenames
 
         class _Train_progress_cb(tf.keras.callbacks.Callback):  # 剩余训练时间回调
             def __init__(self, epochs, user_progress_callback, logger):
@@ -206,6 +207,7 @@ class Detector(Train_Base):
             ann_folder=None,
             img_in_mem=self.datasets_x,  # datasets in mem, format: list
             ann_in_mem=self.datasets_y,  # datasets's annotation in mem, format: list
+            xml_filenames = self.xml_filenames,
             nb_epoch=epochs,
             save_best_weights_path=save_best_weights_path,
             save_final_weights_path=save_final_weights_path,
@@ -471,7 +473,7 @@ class Detector(Train_Base):
             return self._load_datasets_pascal_voc(datasets_dir)
         elif is_roboflow_pascal_voc():
             return self._load_datasets_roboflow_pascal_voc(datasets_dir)
-        return False, "datasets error, not support format, please check", [], None, None, None
+        return False, "datasets error, not support format, please check", [], None, None, None,None,None
 
     def _load_datasets_tfrecord(self, datasets_dir):
         '''
@@ -500,22 +502,22 @@ class Detector(Train_Base):
         label_file_name = "tf_label_map.pbtxt"
         label_file_path = os.path.join(datasets_dir, label_file_name)
         if not os.path.exists(label_file_path):
-            return False, f"no file {label_file_name} exists", [], None, None, None
+            return False, f"no file {label_file_name} exists", [], None, None, None,None
         try:
             labels = self._decode_pbtxt_file(label_file_path)
             self.log.i(f"labels: {labels}")
         except Exception as e:
-            return False, str(e), [], None, None, None
+            return False, str(e), [], None, None, None,None
         # check labels
         ok, msg = self._is_labels_valid(labels)
         if not ok:
-            return False, msg, [], None, None, None
+            return False, msg, [], None, None, None,None
         labels_len = len(labels)
         if labels_len < 1:
-            return False, 'no classes find', [], None, None, None
+            return False, 'no classes find', [], None, None, None,None
         if labels_len > self.config_max_classes_limit:
             return False, 'classes too much, limit:{}, datasets:{}'.format(self.config_max_classes_limit,
-                                                                           len(labels)), [], None, None, None
+                                                                           len(labels)), [], None, None, None,None
 
         # *.tfrecord file
         tfrecord_files = []
@@ -579,7 +581,7 @@ class Detector(Train_Base):
                     continue
                 if not self._check_update_input_shape(img.shape) and not self.allow_reshape:
                     return False, "not supported input size: {}, supported: {}".format(img.shape,
-                                                                                       self.support_shapes), [], None, None, None
+                                                                                       self.support_shapes), [], None, None, None,None
                 input_shape_checked = True
             # check image shape
             if img_shape != self.input_shape[:2]:
@@ -623,7 +625,7 @@ class Detector(Train_Base):
                 img, y_bboxes = self._reshape_image(img, self.input_shape, y_bboxes)
             datasets_x.append(img)
             datasets_y.append(y_bboxes)
-        return True, "ok", labels, classes_data_counts, datasets_x, datasets_y
+        return True, "ok", labels, classes_data_counts, datasets_x, datasets_y,None
 
     def _load_datasets_roboflow_pascal_voc(self, datasets_dir):
         '''
@@ -634,7 +636,7 @@ class Detector(Train_Base):
         labels = []
         datasets_x = []
         datasets_y = []
-
+        xml_filenames = []
         img_dir = os.path.join(datasets_dir, "train")
         ann_dir = os.path.join(datasets_dir, "train")
         labels_path = os.path.join(datasets_dir, "labels.txt")
@@ -653,7 +655,7 @@ class Detector(Train_Base):
             return False, 'no classes find', [], None, None, None
         if labels_len > self.config_max_classes_limit:
             return False, 'classes too much, limit:{}, datasets:{}'.format(self.config_max_classes_limit,
-                                                                           len(labels)), [], None, None, None
+                                                                           len(labels)), [], None, None, None,None
         classes_data_counts = [0] * labels_len
         # get xml path
         xmls = []
@@ -681,7 +683,7 @@ class Detector(Train_Base):
             if not input_shape_checked:
                 if not self._check_update_input_shape(img_shape) and not self.allow_reshape:
                     return False, "not supported input size, supported: {}".format(
-                        self.support_shapes), [], None, None, None
+                        self.support_shapes), [], None, None, None,None
                 input_shape_checked = True
             if img_shape != self.input_shape:
                 msg = f"decode xml {xml_path} ok, but shape {img_shape} not the same as expected: {self.input_shape}"
@@ -706,6 +708,7 @@ class Detector(Train_Base):
                     result = f"decode xml {xml_path}, can not find iamge: {result['path']}"
                     self.on_warning_message(result)
                     continue
+
             # load bndboxes
             y = []
             for bbox in result['bboxes']:
@@ -724,9 +727,11 @@ class Detector(Train_Base):
                 continue
             if img_shape != self.input_shape:
                 img, y = self._reshape_image(img, self.input_shape, y)
+            # 临时保存图片地址，方便调查由什么图片导致出现nan
+            xml_filenames.append(result['filename'])
             datasets_x.append(img)
             datasets_y.append(y)
-        return True, "ok", labels, classes_data_counts, datasets_x, datasets_y
+        return True, "ok", labels, classes_data_counts, datasets_x, datasets_y,xml_filenames
 
     def _load_datasets_pascal_voc(self, datasets_dir):
         '''
@@ -737,7 +742,7 @@ class Detector(Train_Base):
         labels = []
         datasets_x = []
         datasets_y = []
-
+        xml_filenames = []
         img_dir = os.path.join(datasets_dir, "images")
         ann_dir = os.path.join(datasets_dir, "xml")
         labels_path = os.path.join(datasets_dir, "labels.txt")
@@ -750,13 +755,13 @@ class Detector(Train_Base):
         # check labels
         ok, msg = self._is_labels_valid(labels)
         if not ok:
-            return False, msg, [], None, None, None
+            return False, msg, [], None, None, None,None
         labels_len = len(labels)
         if labels_len < 1:
-            return False, 'no classes find', [], None, None, None
+            return False, 'no classes find', [], None, None, None,None
         if labels_len > self.config_max_classes_limit:
             return False, 'classes too much, limit:{}, datasets:{}'.format(self.config_max_classes_limit,
-                                                                           len(labels)), [], None, None, None
+                                                                           len(labels)), [], None, None, None,None
         classes_data_counts = [0] * labels_len
         # get xml path
         xmls = []
@@ -784,7 +789,7 @@ class Detector(Train_Base):
             if not input_shape_checked:
                 if not self._check_update_input_shape(img_shape) and not self.allow_reshape:
                     return False, "not supported input size, supported: {}".format(
-                        self.support_shapes), [], None, None, None
+                        self.support_shapes), [], None, None, None,None
                 input_shape_checked = True
             if img_shape != self.input_shape:
                 msg = f"decode xml {xml_path} ok, but shape {img_shape} not the same as expected: {self.input_shape}"
@@ -809,6 +814,8 @@ class Detector(Train_Base):
                     result = f"decode xml {xml_path}, can not find iamge: {result['path']}"
                     self.on_warning_message(result)
                     continue
+
+
             # load bndboxes
             y = []
             for bbox in result['bboxes']:
@@ -827,9 +834,10 @@ class Detector(Train_Base):
                 continue
             if img_shape != self.input_shape:
                 img, y = self._reshape_image(img, self.input_shape, y)
+            xml_filenames.append(result['filename'])
             datasets_x.append(img)
             datasets_y.append(y)
-        return True, "ok", labels, classes_data_counts, datasets_x, datasets_y
+        return True, "ok", labels, classes_data_counts, datasets_x, datasets_y,xml_filenames
 
     def _decode_pbtxt_file(self, file_path):
         '''

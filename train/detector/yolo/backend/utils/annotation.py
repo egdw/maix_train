@@ -16,14 +16,15 @@ def get_unique_labels(files):
 
 
 def get_train_annotations(labels,
-                          img_folder = None,
-                          ann_folder = None,
-                          valid_img_folder = "",
-                          valid_ann_folder = "",
-                          img_in_mem = None,
-                          ann_in_mem = None,
-                          valid_img_in_mem = None,
-                          valid_ann_in_mem = None,
+                          img_folder=None,
+                          ann_folder=None,
+                          valid_img_folder="",
+                          valid_ann_folder="",
+                          img_in_mem=None,
+                          ann_in_mem=None,
+                          xml_filenames=None,
+                          valid_img_in_mem=None,
+                          valid_ann_in_mem=None,
                           is_only_detect=False,
                           classes=[]):
     """
@@ -46,44 +47,44 @@ def get_train_annotations(labels,
     # parse annotations of the training set
     if img_folder:
         train_anns = parse_annotation(ann_folder,
-                                        img_folder,
-                                        labels,
-                                        is_only_detect,
-                                        classes)
+                                      img_folder,
+                                      labels,
+                                      is_only_detect,
+                                      classes)
         # parse annotations of the validation set, if any, otherwise split the training set
         if os.path.exists(valid_ann_folder):
             valid_anns = parse_annotation(valid_ann_folder,
-                                            valid_img_folder,
-                                            labels,
-                                            is_only_detect,
-                                            classes)
+                                          valid_img_folder,
+                                          labels,
+                                          is_only_detect,
+                                          classes)
         else:
-            train_valid_split = int(0.8*len(train_anns))
+            train_valid_split = int(0.8 * len(train_anns))
             train_anns.shuffle()
-            
+
             # Todo : Hard coding
             valid_anns = Annotations(train_anns._label_namings)
             valid_anns._components = train_anns._components[train_valid_split:]
             train_anns._components = train_anns._components[:train_valid_split]
     else:
-        train_anns = parse_annotation_in_mem(ann_in_mem, img_in_mem, labels, is_only_detect)
+        train_anns = parse_annotation_in_mem(ann_in_mem, img_in_mem, labels, is_only_detect, xml_filenames=xml_filenames)
         if valid_ann_in_mem:
-            valid_anns = parse_annotation_in_mem(valid_ann_in_mem, valid_img_in_mem, labels, is_only_detect,)
+            valid_anns = parse_annotation_in_mem(valid_ann_in_mem, valid_img_in_mem, labels, is_only_detect, )
         else:
-            train_valid_split = int(0.8*len(train_anns))
+            train_valid_split = int(0.8 * len(train_anns))
             train_anns.shuffle()
-            
+
             # Todo : Hard coding
             valid_anns = Annotations(train_anns._label_namings, img_in_memory=True)
             valid_anns._components = train_anns._components[train_valid_split:]
             train_anns._components = train_anns._components[:train_valid_split]
-    
+
     return train_anns, valid_anns
 
 
 class PascalVocXmlParser(object):
     """Parse annotation for 1-annotation file """
-    
+
     def __init__(self):
         pass
 
@@ -143,7 +144,7 @@ class PascalVocXmlParser(object):
         for t in obj_tags:
             labels.append(t.find("name").text)
         return labels
-    
+
     def get_boxes(self, annotation_file):
         """
         # Args
@@ -177,6 +178,7 @@ class PascalVocXmlParser(object):
         tree = parse(fname)
         return tree
 
+
 def parse_annotation(ann_dir, img_dir, labels_naming=[], is_only_detect=False, classes=[]):
     """
     # Args
@@ -188,7 +190,7 @@ def parse_annotation(ann_dir, img_dir, labels_naming=[], is_only_detect=False, c
         all_imgs : list of dict
     """
     parser = PascalVocXmlParser()
-    
+
     if is_only_detect:
         annotations = Annotations(["object"])
     else:
@@ -201,43 +203,44 @@ def parse_annotation(ann_dir, img_dir, labels_naming=[], is_only_detect=False, c
                 classes.append(os.path.basename(name))
     print("class folders: ", classes)
     for cls in classes:
-      subclasses = os.listdir(ann_dir+'/'+cls)
-      for subcls in subclasses:
-        xml_dir = ann_dir+'/'+cls+'/'+subcls
-        img_dir_ = img_dir+'/'+cls+'/'+subcls
-        if not os.path.isdir(xml_dir) or not os.path.isdir(img_dir_):
-            continue
-#         files_limit = 300
-#         count = 0
-        for ann in sorted(os.listdir(xml_dir)):
+        subclasses = os.listdir(ann_dir + '/' + cls)
+        for subcls in subclasses:
+            xml_dir = ann_dir + '/' + cls + '/' + subcls
+            img_dir_ = img_dir + '/' + cls + '/' + subcls
+            if not os.path.isdir(xml_dir) or not os.path.isdir(img_dir_):
+                continue
+            #         files_limit = 300
+            #         count = 0
+            for ann in sorted(os.listdir(xml_dir)):
 
-          if os.path.isdir(ann) or  not ann.endswith(".xml"):
-            continue
-#           if count > files_limit:
-#             break
-#           count += 1
-          annotation_file = os.path.join(xml_dir, ann)
-          fname = parser.get_fname(annotation_file)
+                if os.path.isdir(ann) or not ann.endswith(".xml"):
+                    continue
+                #           if count > files_limit:
+                #             break
+                #           count += 1
+                annotation_file = os.path.join(xml_dir, ann)
+                fname = parser.get_fname(annotation_file)
 
-          annotation = Annotation(os.path.join(img_dir_, fname))
+                annotation = Annotation(os.path.join(img_dir_, fname))
 
-          labels = parser.get_labels(annotation_file)
-          boxes = parser.get_boxes(annotation_file)
-        
-          for label, box in zip(labels, boxes):
-            x1, y1, x2, y2 = box
-            if is_only_detect:
-                annotation.add_object(x1, y1, x2, y2, name="object")
-            else:
-                if label in labels_naming:
-                    annotation.add_object(x1, y1, x2, y2, name=label)
-                    
-          if annotation.boxes is not None:
-            annotations.add(annotation)
-                        
+                labels = parser.get_labels(annotation_file)
+                boxes = parser.get_boxes(annotation_file)
+
+                for label, box in zip(labels, boxes):
+                    x1, y1, x2, y2 = box
+                    if is_only_detect:
+                        annotation.add_object(x1, y1, x2, y2, name="object")
+                    else:
+                        if label in labels_naming:
+                            annotation.add_object(x1, y1, x2, y2, name=label)
+
+                if annotation.boxes is not None:
+                    annotations.add(annotation)
+
     return annotations
 
-def parse_annotation_in_mem(anns, imgs, labels_naming=[], is_only_detect=False, classes=[]):
+
+def parse_annotation_in_mem(anns, imgs, labels_naming=[], is_only_detect=False, classes=[], xml_filenames=None):
     """
     # Args
         ann_in_mem : list [ [[xmin, ymin, xmax, ymax],], ]
@@ -247,13 +250,13 @@ def parse_annotation_in_mem(anns, imgs, labels_naming=[], is_only_detect=False, 
     # Returns
         all_imgs : list of dict
     """
-    
+
     if is_only_detect:
-        annotations = Annotations(["object"], img_in_memory = True)
+        annotations = Annotations(["object"], img_in_memory=True)
     else:
-        annotations = Annotations(labels_naming, img_in_memory = True)
+        annotations = Annotations(labels_naming, img_in_memory=True)
     for i, img in enumerate(imgs):
-        annotation = Annotation(img = img)
+        annotation = Annotation(img=img, filename=xml_filenames[i])
         for bbox in anns[i]:
             if is_only_detect:
                 annotation.add_object(bbox[0], bbox[1], bbox[2], bbox[3], name="object")
@@ -263,7 +266,7 @@ def parse_annotation_in_mem(anns, imgs, labels_naming=[], is_only_detect=False, 
         if annotation.boxes is not None:
             annotations.add(annotation)
     return annotations
-            
+
 
 class Annotation(object):
     """
@@ -272,19 +275,24 @@ class Annotation(object):
         labels : list of strings
         boxes : Boxes instance
     """
-    def __init__(self, filename = None, img = None):
+
+    def __init__(self, filename=None, img=None):
         self.fname = filename
         self.img = img
         self.labels = []
         self.boxes = None
 
+    def add_fname(self, filename):
+        self.fname = filename
+
     def add_object(self, x1, y1, x2, y2, name):
         self.labels.append(name)
         if self.boxes is None:
-            self.boxes = np.array([x1, y1, x2, y2]).reshape(-1,4)
+            self.boxes = np.array([x1, y1, x2, y2]).reshape(-1, 4)
         else:
-            box = np.array([x1, y1, x2, y2]).reshape(-1,4)
+            box = np.array([x1, y1, x2, y2]).reshape(-1, 4)
             self.boxes = np.concatenate([self.boxes, box])
+
 
 class Annotations(object):
     def __init__(self, label_namings, img_in_memory=False):
@@ -300,15 +308,15 @@ class Annotations(object):
 
     def shuffle(self):
         np.random.shuffle(self._components)
-    
+
     def fname(self, i):
         index = self._valid_index(i)
         return self._components[index].fname
-    
+
     def img(self, i):
         index = self._valid_index(i)
         return self._components[index].img
-    
+
     def boxes(self, i):
         index = self._valid_index(i)
         return self._components[index].boxes
@@ -341,4 +349,3 @@ class Annotations(object):
 
     def __getitem__(self, idx):
         return self._components[idx]
-

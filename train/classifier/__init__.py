@@ -30,10 +30,7 @@ import random
 class Classifier(Train_Base):
     def __init__(self, input_shape=(224, 224, 3), datasets_dir=None, datasets_zip=None, unpack_dir=None, logger = None,
                 max_classes_num=15, min_images_num=40, max_images_num=2000, allow_reshape = False):
-        '''
-            input_shape: input shape (height, width)
-            min_images_num: min image number in one class
-        '''
+
         # import_libs() # 针对多进程
         import tensorflow as tf
         self.input_shape = input_shape

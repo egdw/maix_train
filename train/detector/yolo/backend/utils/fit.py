@@ -122,6 +122,19 @@ def _create_callbacks(save_best_weights_path, other_callbacks=[]):
                     self.monitor_op = np.less
                     self.best = np.Inf
 
+        #
+        # # 监听每一次batch后的结果
+        # def on_batch_end(self,batch,logs):
+        #     print(batch,logs)
+        def on_train_batch_end(self, batch, logs=None):
+            # 在每个批次训练结束时，应用梯度裁剪
+            logs = logs or {}
+            if 'grads' in logs:
+                grads = logs['grads']
+                clipped_grads = [tf.clip_by_value(g, -1., 1.) if g is not None else g for g in grads]
+                logs['grads'] = clipped_grads
+
+
         def on_epoch_end(self, epoch, logs=None):
             logs = logs or {}
             self.epochs_since_last_save += 1
@@ -164,7 +177,7 @@ def _create_callbacks(save_best_weights_path, other_callbacks=[]):
     # Make a few callbacks
     early_stop = EarlyStopping(monitor='val_loss', 
                        min_delta=0.001, 
-                       patience=20, 
+                       patience=20,
                        mode='min', 
                        verbose=1,
                        restore_best_weights=True)
@@ -175,8 +188,8 @@ def _create_callbacks(save_best_weights_path, other_callbacks=[]):
                                  save_weights_only = True,
                                  mode='min', 
                                  period=1)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
-                              patience=5, min_lr=0.00001, verbose=1)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.8,
+                              patience=10, min_lr=0.00001, verbose=1)
     callbacks = [early_stop, reduce_lr]
     if other_callbacks:
         callbacks.extend(other_callbacks)

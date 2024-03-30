@@ -55,6 +55,7 @@ def create_batch_generator(annotations,
             """
             x_batch = []
             y_batch= []
+            fnames = []
             for i in range(self._batch_size):
                 # 1. get input file & its annotation
                 fname = self.annotations.fname(self._batch_size*idx + i)
@@ -74,10 +75,11 @@ def create_batch_generator(annotations,
                 # 4. generate x_batch
                 x_batch.append(self._netin_gen.run(img))
                 y_batch.append(self._netout_gen.run(norm_boxes, labels))
-
+                fnames.append(fname)
             x_batch = np.array(x_batch)
             y_batch = np.array(y_batch)
             self.counter += 1
+            # print(fnames)
             return x_batch, y_batch
 
         def on_epoch_end(self):

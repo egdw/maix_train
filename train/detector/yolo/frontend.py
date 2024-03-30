@@ -106,6 +106,7 @@ class YOLO(object):
               ann_folder,
               img_in_mem,       # datasets in mem, format: list
               ann_in_mem,       # datasets's annotation in mem, format: list
+              xml_filenames, # 记录每个图片的文件名，方便调查nan
               nb_epoch,
               save_best_weights_path,
               save_final_weights_path,
@@ -129,6 +130,7 @@ class YOLO(object):
                                                                      valid_ann_folder,
                                                                      img_in_mem,
                                                                      ann_in_mem,
+                                                                     xml_filenames,
                                                                      valid_img_in_mem,
                                                                      valid_ann_in_mem,
                                                                      is_only_detect)

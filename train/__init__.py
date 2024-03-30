@@ -276,7 +276,7 @@ class Train():
                     jitter=False,
                     is_only_detect = False,
                     batch_size = config.detector_train_batch_size,
-                    train_times = 5,
+                    train_times = 10,
                     valid_times = 2,
                     learning_rate=config.detector_train_learn_rate,
                 )
